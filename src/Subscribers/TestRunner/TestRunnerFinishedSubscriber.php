@@ -2,11 +2,9 @@
 
 declare(strict_types=1);
 
-namespace LeanBookTools\Subscribers\TestRunner;
+namespace TomasVotruba\PHPUnitJsonResultPrinter\Subscribers\TestRunner;
 
-use LeanBookTools\Naming\ClassNaming;
-use LeanBookTools\OutputCleaner;
-use LeanBookTools\Subscribers\AbstractSubscriber;
+use TomasVotruba\PHPUnitJsonResultPrinter\Printer\SimplePrinter;
 use PHPUnit\Event\Code\Test;
 use PHPUnit\Event\Code\TestMethod;
 use PHPUnit\Event\Test\Failed;
@@ -16,58 +14,43 @@ use PHPUnit\TestRunner\TestResult\Facade;
 use PHPUnit\TextUI\Output\DefaultPrinter;
 use PHPUnit\TextUI\Output\SummaryPrinter;
 
-final class TestRunnerFinishedSubscriber extends AbstractSubscriber implements FinishedSubscriber
+final class TestRunnerFinishedSubscriber implements FinishedSubscriber
 {
-    /**
-     * @var string
-     */
-    private const TIME_AND_MEMORY_PLACEHOLDER = 'Time: 00:00.782, Memory: 64.50 MB';
+    public function __construct(
+        private SimplePrinter $simplePrinter
+    ) {
+    }
 
     public function notify(Finished $event): void
     {
         $testResult = Facade::result();
 
+        $resultJsonData = [
+            'counts' => [
+                'number_of_test_run' => $testResult->numberOfTestsRun(),
+                'error_test_run' => $testResult->numberOfTestErroredEvents(),
+                'success_test_run' => $testResult->numberOfTestsRun() - $testResult->numberOfTestErroredEvents(),
+
+            ],
+        ];
+
+        $resultJson = json_encode($resultJsonData, JSON_PRETTY_PRINT);
+        $this->simplePrinter->writeln($resultJson);
+
         // simple progress report
         if ($testResult->numberOfTestsRun() !== 0) {
             $successTestCount = $testResult->numberOfTestsRun() - $testResult->numberOfTestErroredEvents();
-
-            $this->simplePrinter->writeln(sprintf(
-                '     %d / %d (%.0f%%)',
-                $successTestCount,
-                $testResult->numberOfTestsRun(),
-                100 * ($successTestCount / $testResult->numberOfTestsRun())
-            ));
         }
 
-        if ($testResult->numberOfTestsRun() !== 0) {
-            $this->simplePrinter->newLine(1);
-            $this->simplePrinter->writeln(self::TIME_AND_MEMORY_PLACEHOLDER);
-        }
-
-        // print failed tests
-        if ($testResult->hasTestFailedEvents()) {
-            $this->printListHeaderWithNumber($testResult->numberOfTestFailedEvents(), 'failure');
-            $this->printTestFailedEvents($testResult->testFailedEvents());
-        }
-
-        $summaryPrinter = new SummaryPrinter(DefaultPrinter::standardOutput(), false);
-        $summaryPrinter->print($testResult);
-    }
-
-    /**
-     * Mimics @see \PHPUnit\TextUI\Output\Default\ResultPrinter::printListHeaderWithNumber()
-     */
-    private function printListHeaderWithNumber(int $number, string $type): void
-    {
-        $message = sprintf(
-            "There %s %d %s%s:\n",
-            ($number === 1) ? 'was' : 'were',
-            $number,
-            $type,
-            ($number === 1) ? '' : 's',
-        );
-
-        $this->simplePrinter->writeln($message);
+//        // print failed tests
+//        if ($testResult->hasTestFailedEvents()) {
+//            $this->printListHeaderWithNumber($testResult->numberOfTestFailedEvents(), 'failure');
+//            $this->printTestFailedEvents($testResult->testFailedEvents());
+//        }
+//
+//        // print in JSON
+//        $summaryPrinter = new SummaryPrinter(DefaultPrinter::standardOutput(), false);
+//        $summaryPrinter->print($testResult);
     }
 
     /**
@@ -93,7 +76,6 @@ final class TestRunnerFinishedSubscriber extends AbstractSubscriber implements F
     private function printListElement(int $number, string $title, string $body): void
     {
         $body = trim($body);
-        $cleanBody = OutputCleaner::cleanUpExceptionMessage($body);
 
         $this->simplePrinter->writeln(
             sprintf(
@@ -101,7 +83,7 @@ final class TestRunnerFinishedSubscriber extends AbstractSubscriber implements F
                 $number > 1 ? "\n" : '',
                 $number,
                 $title,
-                $cleanBody,
+                $body,
                 ! empty($cleanBody) ? "\n" : '',
             ),
         );
