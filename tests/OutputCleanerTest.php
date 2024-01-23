@@ -14,7 +14,6 @@ final class OutputCleanerTest extends TestCase
     public function testSame(string $input): void
     {
         $this->assertSame(100, $input);
-
     }
 
     public static function provideData(): Iterator

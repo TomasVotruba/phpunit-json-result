@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace TomasVotruba\PHPUnitJsonResultPrinter\Subscribers\TestRunner;
 
-use TomasVotruba\PHPUnitJsonResultPrinter\Printer\SimplePrinter;
 use PHPUnit\Event\Code\Test;
 use PHPUnit\Event\Code\TestMethod;
 use PHPUnit\Event\Test\Failed;
@@ -13,6 +12,7 @@ use PHPUnit\Event\TestRunner\FinishedSubscriber;
 use PHPUnit\TestRunner\TestResult\Facade;
 use PHPUnit\TextUI\Output\DefaultPrinter;
 use PHPUnit\TextUI\Output\SummaryPrinter;
+use TomasVotruba\PHPUnitJsonResultPrinter\Printer\SimplePrinter;
 
 final class TestRunnerFinishedSubscriber implements FinishedSubscriber
 {
@@ -30,7 +30,6 @@ final class TestRunnerFinishedSubscriber implements FinishedSubscriber
                 'number_of_test_run' => $testResult->numberOfTestsRun(),
                 'error_test_run' => $testResult->numberOfTestErroredEvents(),
                 'success_test_run' => $testResult->numberOfTestsRun() - $testResult->numberOfTestErroredEvents(),
-
             ],
         ];
 
@@ -42,15 +41,15 @@ final class TestRunnerFinishedSubscriber implements FinishedSubscriber
             $successTestCount = $testResult->numberOfTestsRun() - $testResult->numberOfTestErroredEvents();
         }
 
-//        // print failed tests
-//        if ($testResult->hasTestFailedEvents()) {
-//            $this->printListHeaderWithNumber($testResult->numberOfTestFailedEvents(), 'failure');
-//            $this->printTestFailedEvents($testResult->testFailedEvents());
-//        }
-//
-//        // print in JSON
-//        $summaryPrinter = new SummaryPrinter(DefaultPrinter::standardOutput(), false);
-//        $summaryPrinter->print($testResult);
+        //        // print failed tests
+        //        if ($testResult->hasTestFailedEvents()) {
+        //            $this->printListHeaderWithNumber($testResult->numberOfTestFailedEvents(), 'failure');
+        //            $this->printTestFailedEvents($testResult->testFailedEvents());
+        //        }
+        //
+        //        // print in JSON
+        //        $summaryPrinter = new SummaryPrinter(DefaultPrinter::standardOutput(), false);
+        //        $summaryPrinter->print($testResult);
     }
 
     /**
