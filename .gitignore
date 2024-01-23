@@ -1,0 +1,5 @@
+/vendor
+/.phpunit.result.cache
+
+# simple package
+composer.lock
