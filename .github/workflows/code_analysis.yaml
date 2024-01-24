@@ -24,6 +24,7 @@ jobs:
                         name: 'Coding Standard'
                         run: composer fix-cs --ansi
 
+                    # this should fail and show json result
                     -
                         name: 'Tests'
                         run: vendor/bin/phpunit
