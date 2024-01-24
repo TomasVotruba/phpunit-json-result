@@ -4,14 +4,13 @@ declare(strict_types=1);
 
 namespace TomasVotruba\PHPUnitJsonResultPrinter\Subscribers\TestRunner;
 
-use PHPUnit\Event\Code\Test;
+use ECSPrefix202401\Nette\Utils\Strings;
 use PHPUnit\Event\Code\TestMethod;
 use PHPUnit\Event\Test\Failed;
 use PHPUnit\Event\TestRunner\Finished;
 use PHPUnit\Event\TestRunner\FinishedSubscriber;
+use PHPUnit\Metadata\DataProvider;
 use PHPUnit\TestRunner\TestResult\Facade;
-use PHPUnit\TextUI\Output\DefaultPrinter;
-use PHPUnit\TextUI\Output\SummaryPrinter;
 use TomasVotruba\PHPUnitJsonResultPrinter\Printer\SimplePrinter;
 
 final class TestRunnerFinishedSubscriber implements FinishedSubscriber
@@ -27,88 +26,65 @@ final class TestRunnerFinishedSubscriber implements FinishedSubscriber
 
         $resultJsonData = [
             'counts' => [
-                'number_of_test_run' => $testResult->numberOfTestsRun(),
-                'error_test_run' => $testResult->numberOfTestErroredEvents(),
-                'success_test_run' => $testResult->numberOfTestsRun() - $testResult->numberOfTestErroredEvents(),
+                'tests' => $testResult->numberOfTestsRun(),
+                'failed' => $testResult->numberOfTestFailedEvents(),
+                'assertions' => $testResult->numberOfAssertions(),
+                'errors' => $testResult->numberOfTestErroredEvents(),
+                'warnings' => $testResult->numberOfWarnings(),
+                'deprecations' => $testResult->numberOfDeprecations(),
+                'notices' => $testResult->numberOfNotices(),
+                'success' => $testResult->numberOfTestsRun() - $testResult->numberOfTestErroredEvents(),
+                'incomplete' => $testResult->numberOfTestMarkedIncompleteEvents(),
+                'risky' => $testResult->numberOfTestsWithTestConsideredRiskyEvents(),
+                'skipped' => $testResult->numberOfTestSuiteSkippedEvents() + $testResult->numberOfTestSkippedEvents(),
             ],
         ];
 
+        $resultJsonData['failed'] = [];
+
+        // print failed tests
+        foreach ($testResult->testFailedEvents() as $testFailedEvent) {
+            /** @var Failed $testFailedEvent */
+            $testMethod = $testFailedEvent->test();
+
+            /** @var TestMethod $testMethod */
+            $failedEventData = [
+                'test_class' => $testMethod->className(),
+                'test_method' => $testMethod->methodName(),
+                'message' => $testFailedEvent->throwable()->message(),
+                'exception_class' => $testFailedEvent->throwable()->className(),
+                'line' => Strings::after(trim($testFailedEvent->throwable()->stackTrace()), ':', -1),
+            ];
+
+            if ($testMethod->testData()->hasDataFromDataProvider()) {
+                $failedEventData['data_provider'] = $this->createDataProviderData($testMethod);
+            }
+
+            $resultJsonData['failed'][] = $failedEventData;
+        }
+
         $resultJson = json_encode($resultJsonData, JSON_PRETTY_PRINT);
         $this->simplePrinter->writeln($resultJson);
-
-        // simple progress report
-        if ($testResult->numberOfTestsRun() !== 0) {
-            $successTestCount = $testResult->numberOfTestsRun() - $testResult->numberOfTestErroredEvents();
-        }
-
-        //        // print failed tests
-        //        if ($testResult->hasTestFailedEvents()) {
-        //            $this->printListHeaderWithNumber($testResult->numberOfTestFailedEvents(), 'failure');
-        //            $this->printTestFailedEvents($testResult->testFailedEvents());
-        //        }
-        //
-        //        // print in JSON
-        //        $summaryPrinter = new SummaryPrinter(DefaultPrinter::standardOutput(), false);
-        //        $summaryPrinter->print($testResult);
     }
 
     /**
-     * @param Failed[] $testFailedEvents
+     * @return array<string, mixed>
      */
-    private function printTestFailedEvents(array $testFailedEvents): void
+    private function createDataProviderData(TestMethod $testMethod): array
     {
-        $i = 1;
+        $dataFromDataProvider = $testMethod->testData()->dataFromDataProvider();
 
-        foreach ($testFailedEvents as $testFailedEvent) {
-            $title = $this->createTitle($testFailedEvent->test());
-            $body = $testFailedEvent->throwable()->asString();
+        $dataProviderData = [
+            'key' => $dataFromDataProvider->dataSetName(),
+            'data' => $dataFromDataProvider->data(),
+        ];
 
-            $this->printListElement($i, $title, $body);
-            $i++;
-        }
-    }
-
-    /**
-     * Mimics
-     * @see \PHPUnit\TextUI\Output\Default\ResultPrinter::printListElement()
-     */
-    private function printListElement(int $number, string $title, string $body): void
-    {
-        $body = trim($body);
-
-        $this->simplePrinter->writeln(
-            sprintf(
-                "%s%d) %s\n%s%s",
-                $number > 1 ? "\n" : '',
-                $number,
-                $title,
-                $body,
-                ! empty($cleanBody) ? "\n" : '',
-            ),
-        );
-    }
-
-    /**
-     * Mimics
-     * @see \PHPUnit\TextUI\Output\Default\ResultPrinter::name
-     *
-     * The result should be short class name and fixture number e.g. "MigrateToDateTimeImmutableRectorTest::test with data set #1"
-     */
-    private function createTitle(Test $test): string
-    {
-        if (! $test instanceof TestMethod) {
-            return $test->name();
+        foreach ($testMethod->metadata() as $metadata) {
+            if ($metadata instanceof DataProvider) {
+                $dataProviderData['provider_method'] = $metadata->methodName();
+            }
         }
 
-        $shortClassName = ClassNaming::resolveShortClassName($test->className());
-
-        $title = $shortClassName . '::' . $test->methodName();
-
-        if ($test->testData()->hasDataFromDataProvider()) {
-            $dataFromDataProvider = $test->testData()->dataFromDataProvider();
-            $title .= ' with data set #' . $dataFromDataProvider->dataSetName();
-        }
-
-        return $title;
+        return $dataProviderData;
     }
 }
