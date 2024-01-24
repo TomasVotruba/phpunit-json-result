@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace TomasVotruba\PHPUnitJsonResultPrinter\Subscribers\TestRunner;
 
-use ECSPrefix202401\Nette\Utils\Strings;
 use PHPUnit\Event\Code\TestMethod;
 use PHPUnit\Event\Test\Failed;
 use PHPUnit\Event\TestRunner\Finished;
@@ -53,7 +52,7 @@ final class TestRunnerFinishedSubscriber implements FinishedSubscriber
                 'test_method' => $testMethod->methodName(),
                 'message' => $testFailedEvent->throwable()->message(),
                 'exception_class' => $testFailedEvent->throwable()->className(),
-                'line' => Strings::after(trim($testFailedEvent->throwable()->stackTrace()), ':', -1),
+                'line' => $this->resolveLineNumber($testFailedEvent->throwable()->stackTrace()),
             ];
 
             if ($testMethod->testData()->hasDataFromDataProvider()) {
@@ -63,7 +62,7 @@ final class TestRunnerFinishedSubscriber implements FinishedSubscriber
             $resultJsonData['failed'][] = $failedEventData;
         }
 
-        $resultJson = json_encode($resultJsonData, JSON_PRETTY_PRINT);
+        $resultJson = json_encode($resultJsonData, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR);
         $this->simplePrinter->writeln($resultJson);
     }
 
@@ -86,5 +85,11 @@ final class TestRunnerFinishedSubscriber implements FinishedSubscriber
         }
 
         return $dataProviderData;
+    }
+
+    private function resolveLineNumber(string $stackTrace): int
+    {
+        preg_match('#:(?<line>\d+)$#', $stackTrace, $matches);
+        return (int) $matches['line'];
     }
 }
