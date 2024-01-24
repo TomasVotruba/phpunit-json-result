@@ -74,7 +74,7 @@ final class TestRunnerFinishedSubscriber implements FinishedSubscriber
     }
 
     /**
-     * @return Failed[]
+     * @return array<array<string, mixed>>
      */
     private function createFailedEventDatas(TestResult $testResult): array
     {
