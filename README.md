@@ -1,4 +1,6 @@
-# Cleaner Result Printer
+# PHPUnit Json Result Printer
+
+Other PHP CLI tool can communicate with API using JSON. Why not PHPUnit?
 
 ## Install
 
