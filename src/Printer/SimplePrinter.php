@@ -6,7 +6,7 @@ namespace TomasVotruba\PHPUnitJsonResultPrinter\Printer;
 
 use PHPUnit\TextUI\Output\Printer;
 
-final readonly class SimplePrinter
+final class SimplePrinter
 {
     public function __construct(
         private Printer $phpunitPrinter
