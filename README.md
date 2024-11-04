@@ -2,6 +2,10 @@
 
 Other PHP CLI tool can communicate with API using JSON. Why not PHPUnit?
 
+This package requires PHPUnit 10+ and PHP 8.1+.
+
+<br>
+
 ## Install
 
 ```bash
