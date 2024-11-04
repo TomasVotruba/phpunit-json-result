@@ -91,6 +91,7 @@ final class TestRunnerFinishedSubscriber implements FinishedSubscriber
 
             /** @var TestMethod $testMethod */
             $failedEventData = [
+                'test_file_path' => $testMethod->file(),
                 'test_class' => $testMethod->className(),
                 'test_method' => $testMethod->methodName(),
                 'message' => $testFailedEvent->throwable()->message(),
