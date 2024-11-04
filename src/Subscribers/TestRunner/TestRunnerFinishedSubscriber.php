@@ -16,7 +16,7 @@ use TomasVotruba\PHPUnitJsonResultPrinter\Printer\SimplePrinter;
 final class TestRunnerFinishedSubscriber implements FinishedSubscriber
 {
     public function __construct(
-        private SimplePrinter $simplePrinter
+        private readonly SimplePrinter $simplePrinter
     ) {
     }
 
@@ -70,6 +70,11 @@ final class TestRunnerFinishedSubscriber implements FinishedSubscriber
     private function resolveLineNumber(string $stackTrace): int
     {
         preg_match('#:(?<line>\d+)$#', $stackTrace, $matches);
+
+        if (! isset($matches['line'])) {
+            return 0;
+        }
+
         return (int) $matches['line'];
     }
 

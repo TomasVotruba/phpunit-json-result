@@ -17,7 +17,7 @@ use TomasVotruba\PHPUnitJsonResultPrinter\Subscribers\TestRunner\TestRunnerFinis
  */
 final class PHPUnitJsonResultPrinterExtension implements Extension
 {
-    private SimplePrinter $simplePrinter;
+    private readonly SimplePrinter $simplePrinter;
 
     public function __construct()
     {

@@ -9,7 +9,7 @@ use PHPUnit\TextUI\Output\Printer;
 final class SimplePrinter
 {
     public function __construct(
-        private Printer $phpunitPrinter
+        private readonly Printer $phpunitPrinter
     ) {
     }
 
